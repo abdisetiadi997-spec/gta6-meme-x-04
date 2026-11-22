@@ -23,8 +23,15 @@ const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 // judged at all, so stop here with a clear error instead of handing the
 // gate a file that points nowhere.
 const post = JSON.parse(readFileSync(join(BOT_DIR, 'POST.json'), 'utf8'));
-if (typeof post.url !== 'string' || !post.url.startsWith('https://x.com/')) {
-  console.error(`POST.json does not name an x.com post: ${post.url}`);
+
+// A bare x.com address is not enough: the gate judges one specific post,
+// so the address has to carry a handle and a numeric status id. Anything
+// else is rejected here, before any file is copied.
+const STATUS_LINK = /^https:\/\/x\.com\/[A-Za-z0-9_]+\/status\/\d+$/;
+if (typeof post.url !== 'string' || !STATUS_LINK.test(post.url)) {
+  console.error(
+    `POST.json must name a single X post like https://x.com/<handle>/status/<id>, got: ${post.url}`,
+  );
   process.exit(1);
 }
 
